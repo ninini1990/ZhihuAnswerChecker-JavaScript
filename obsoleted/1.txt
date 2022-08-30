@@ -1,0 +1,233 @@
+// ==UserScript==
+// @name        ZhihuAnswerChecker
+// @namespace   Violentmonkey Scripts
+// @match       https://www.zhihu.com/people/*
+// @require     https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js
+// @grant       window.focus
+// @grant       window.open
+// @version     1.0
+// @author      尼尼尼@知乎
+// @description 2022/8/11 15:51:19
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    //全局变量设置
+    var endFlag=0;//设置翻页结束标志。
+    var allLinkList=[];//设置全部链接存储数组。
+    var blockLinkList=[];//设置检测屏蔽结果存储数组。
+    var allLinkCount=0;//全部链接计数器。
+    var blockLinkCount=0;//被屏蔽链接计数器。
+    var resultPage='';//检测结果页面文本。
+
+
+
+
+
+    //主函数
+    function checkLink() {
+
+        //获取检查的初始页面链接（回答、文章等的第一页）。
+        var baseUrl = window.location.href;
+        var pageCount=1; //从第一页开始计数。
+        console.log(baseUrl);
+
+        //逐页获取回答、文章或想法链接
+        do {
+
+            console.log('页面加载状态  '+ document.readyState);
+            //判断当前页面是否加载完成,如未完成则重试。
+            if (document.readyState !== "complete") {
+                //这里本来应该加入等待时间，但我不知道怎么实现。
+                let startTime = new Date().getTime();
+                sleep(startTime,3000);
+                continue;
+            }
+
+            //获取当前页面上回答、文章或想法链接链接（class="List-item")
+            let currentLinks = document.querySelectorAll("a[data-za-detail-view-element_name=Title]");
+            console.log(currentLinks);
+
+            if( currentLinks.length === 0){
+                alert('错误：当前页面链接数组为空,停止执行');
+                throw new Error('当前页面链接数组为空');
+            }
+            //存入数组并计数
+            currentLinks.forEach(function (listItem) {
+                allLinkCount++;
+
+                //取出关键信息并存入数组
+                let link = listItem.href;
+                let title = listItem.innerHTML;
+                let infoItem = {title, link};
+                allLinkList.push(infoItem);
+            });
+
+            //判断是否最后一页，如不是，则翻页继续执行；如是，则退出。
+            let nextPageBtn = getNextPageBtn();
+            console.log('mmp');
+            console.log(nextPageBtn);
+            if (nextPageBtn === undefined) {
+                console.log('已到最后一页');
+                endFlag = 1;
+            } else {
+                console.log('翻页操作');
+                nextPageBtn.click();
+/*                pageCount++;
+                let newUrl=getNewUrl(baseUrl,pageCount);
+                openNewPage(newUrl);*/
+
+/*                var timer = setInterval(function () {
+                    // 判断下一页是否加载完成。
+                    if (document.readyState === 'complete') {
+                        //执行方法
+                        window.clearInterval(timer);
+                    }else{
+                        console.log('下一页未加载完成');
+                    }
+                }, 1000)*/
+
+                //let startTime = new Date().getTime();
+                //sleep(startTime,2000);
+/*                let btnList = document.querySelectorAll("button[class='Button PaginationButton PaginationButton-next Button--plain']");
+                $(btnList[0]).click();
+                console.log(btnList[0]);
+                $(document).ready();*/
+                //判断是否已翻到下一页。
+/*              while( window.location.href === baseUrl){
+                    console.log('当前页面url')
+                    console.log(window.location.href);
+                    let startTime = new Date().getTime();
+                    sleep(startTime,2000);
+                    //如翻页失败，则重新点击。
+                    btnList[0].click();
+                }*/
+
+
+
+                //起始页面改为当前页。
+                //baseUrl = newUrl;
+            }
+        } while (endFlag === 0);
+
+        console.log(allLinkList);
+
+        //如果取到的链接为空，抛异常终止执行
+        if( allLinkList.length === 0){
+            alert('错误：获取全部链接数组为空,停止执行');
+            throw new Error('获取全部链接数组为空');
+        }
+
+        //对链接进行可访问性检查（非登录状态、不区分“仅自己可见”和“仅自己和关注者可见”）。
+        allLinkList.forEach(function (listItem) {
+            console.log('开始访问性检查');
+            blockLinkCount++;
+            let link = listItem.link;
+
+            fetch(link)
+                .then((response) => {
+                    return response.text();
+                })
+                .then((data) => {
+                    let text = data;
+                    //以网站响应页面中“没有知识存在的荒原”为标志,进行检查。
+                    if (text.includes('没有知识存在的荒原')) {
+                        blockLinkList.push(listItem);
+                    }
+                })
+        });
+
+        //构造结果展示页面
+        resultPage = '<!DOCTYPE html><html><body><div>总链接数量：'
+            + allLinkCount
+            + '</div></div>  被屏蔽数量：'
+            + blockLinkCount
+            + '</div><div><table>';
+
+        //存在被屏蔽回答时，填充报告页面。
+        if(blockLinkList.length !== 0) {
+            blockLinkList.forEach(function (listItem) {
+                let cell = '<tr><td>'
+                    + listItem.title
+                    + '</td><td>'
+                    + listItem.link
+                    + '</td></tr>';
+
+                resultPage = resultPage + cell;
+            });
+        }
+
+        resultPage = resultPage
+            + '</table></div></body></html>';
+
+        //新建浏览器标签，并展示检查结果。
+        const newTab = window.open();
+        newTab.document.write(resultPage);
+        newTab.focus();
+        alert('检测成功，今天你又被屏蔽了吗？');
+    }
+
+    //在页面上添加执行按钮
+    function addCheckButton() {
+        console.log('执行到加按钮函数里面');
+        $('body').append('<div id="CheckLink">点击执行检查</div>')
+        $('#CheckLink').css('width', '200px')
+        $('#CheckLink').css('position', 'absolute')
+        $('#CheckLink').css('top', '70px')
+        $('#CheckLink').css('left', '350px')
+        $('#CheckLink').css('background-color', '#28a745')
+        $('#CheckLink').css('color', 'white')
+        $('#CheckLink').css('font-size', 'large')
+        $('#CheckLink').css('z-index', 100)
+        $('#CheckLink').css('border-radius', '25px')
+        $('#CheckLink').css('text-align', 'center')
+        $('#CheckLink').click(function () {
+            checkLink();
+        });
+        $('#CheckLink').draggable();
+    }
+
+    function getNewUrl(baseUrl,pageCount){
+        let position = baseUrl.indexOf('=') +1;
+        let newUrl=baseUrl.slice(0,position)+pageCount;
+        console.log('新的url  '+newUrl);
+        return newUrl;
+    }
+
+    function openNewPage(newUrl){
+        console.log('打开新页面');
+        window.open(newUrl,'_self');
+    }
+
+    function getNextPageBtn(){
+        //获取所有按钮元素，并判断是否存在“下一页”按钮。
+        var buttonList= document.querySelectorAll("button[class='Button PaginationButton PaginationButton-next Button--plain']");
+        for (const btn of buttonList) {
+            if (btn.textContent.includes("下一页")) {
+                console.log('存在下一页')
+                return btn;
+            }
+        }
+
+
+    }
+
+
+    //自定义等待时间，1000毫秒=1秒。
+    function sleep(startTime,milliSeconds) {
+        while (new Date().getTime() < startTime + milliSeconds) {
+            console.log(startTime);
+            console.log(startTime + milliSeconds);
+            console.log('已等待时间'+ milliSeconds);
+        }
+    }
+
+    $(document).ready(function () {
+        if (window.location.href.startsWith('https://www.zhihu.com/people')) {
+            addCheckButton();
+        }
+    })
+
+
+})();

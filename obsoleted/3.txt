@@ -1,0 +1,141 @@
+// ==UserScript==
+// @name        ZhihuCheckerSinglePage
+// @namespace   Violentmonkey Scripts
+// @match       https://www.zhihu.com/people/*
+// @require     https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js
+// @grant       window.focus
+// @version     1.0
+// @author      纯正老实人哈@知乎,尼尼尼@知乎
+// @description 2022/8/17 10:00:00
+// ==/UserScript==
+
+(function() {
+    'use strict';
+
+    //全局变量设置
+    var baseUrl = "https://www.zhihu.com/people";
+    var currentUrl = window.location.href;
+    var allLinkList=[];//设置全部链接存储数组。
+    var blockedLinkList=[];//设置检测屏蔽结果存储数组。
+    var resultPage='';//检测结果页面文本。
+
+    function c(v){
+        console.log(v);
+    }
+
+
+    //获取当前页面上回答、文章或想法链接链接（class="List-item")
+    function getAllLinksOnCurrentPage(){
+        var linkList = [];
+        var currentPageLinks = document.querySelectorAll("a[data-za-detail-view-element_name=Title]");
+
+        if( currentPageLinks.length != 0){
+            //存入数组并计数
+            currentPageLinks.forEach(function (listItem) {
+                //取出关键信息并存入数组
+                let link = listItem.href;
+                let title = listItem.innerHTML;
+                let infoItem = {title, link};
+                linkList.push(infoItem);
+            });
+        }
+
+        allLinkList = linkList;
+
+        return linkList;
+
+    }
+
+    //对链接进行可访问性检查（非登录状态、不区分“仅自己可见”和“仅自己和关注者可见”）。
+    function checkAllLinkList(list){
+        if(list.length != 0){
+            c(list);
+            var fetchCount = 0;
+            list.forEach(function (listItem) {
+                c('fetching...');
+                let link = listItem.link;
+                let title = listItem.title;
+                fetch(link,{credentials:"omit"})
+                    .then((response) => {
+                    return response.text();
+                }).then((data) => {
+                    ++fetchCount;
+                    //以网站响应页面中“没有知识存在的荒原”为标志,进行检查。
+                    if (data.includes('没有知识存在的荒原')) {
+                        blockedLinkList.push(listItem);
+                    }
+                    if(fetchCount === list.length){
+                        c("全部被禁结果获取完毕");
+                        c(blockedLinkList);
+                        showResult();
+                    }
+                });
+
+            });
+        }
+
+    }
+
+    //展示结果
+    function showResult(){
+
+        resultPage = '<!DOCTYPE html><html><body><div>当前页总链接：'
+            + allLinkList.length
+            + '</div></div>  当前页被屏蔽：'
+            + blockedLinkList.length
+            + '</div><div><table>';
+
+        if(blockedLinkList.length !== 0) {
+            blockedLinkList.forEach(function (listItem) {
+                let cell = '<tr><td>'
+                    + listItem.title
+                    + '</td><td>'
+                    + '<a href="'+listItem.link+'" target=_blank>'
+                    + listItem.link
+                    + '</a></td></tr>';
+
+                resultPage += cell;
+            });
+        }
+
+        resultPage +='</table></div></body></html>';
+
+        const newTab = window.open();
+        newTab.document.write(resultPage);
+        newTab.focus();
+    }
+
+    //主函数
+    function init() {
+
+        addCheckButton();
+
+    }
+
+    //在页面上添加执行按钮
+    function addCheckButton() {
+        $('body').append('<div id="CheckLink">点击执行检查</div>')
+        $('#CheckLink').css('width', '200px')
+        $('#CheckLink').css('position', 'absolute')
+        $('#CheckLink').css('top', '70px')
+        $('#CheckLink').css('left', '350px')
+        $('#CheckLink').css('background-color', '#28a745')
+        $('#CheckLink').css('color', 'white')
+        $('#CheckLink').css('font-size', 'large')
+        $('#CheckLink').css('z-index', 100)
+        $('#CheckLink').css('border-radius', '25px')
+        $('#CheckLink').css('text-align', 'center')
+        $('#CheckLink').click(function () {
+            checkAllLinkList(getAllLinksOnCurrentPage());
+        });
+        $('#CheckLink').draggable();
+    }
+
+
+    document.onreadystatechange = function(){
+        if(document.readyState === "complete"){
+            init();
+        }
+　　}
+
+})();
