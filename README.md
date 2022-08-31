@@ -2,7 +2,6 @@
 知乎用户用于检查 “回答” 被屏蔽情况的Javascript脚本。<br>
 仅限检查“回答”项目，且单次执行只检查当前的单个页面。<p>
 建议用途：随时检查最新一页回答中的被屏蔽情况。<p>
-作者：<a href="https://www.zhihu.com/people/lao-shi-ren-bu-jie-pan-12" target="_blank">纯正老实人哈@知乎</a>（主体编写）, <a href="https://www.zhihu.com/people/nidaye2" target="_blank">尼尼尼@知乎</a>（初版编写）<p>
 
 **运行环境需求：**<p>
 已测试过 谷歌Chrome / 微软Edge/ Firefox 浏览器，均可正常使用。<p>
