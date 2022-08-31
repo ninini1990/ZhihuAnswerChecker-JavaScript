@@ -112,11 +112,11 @@
         allLinkList = getAllLinkList();
         blockedLinkList = getBlockedLinkList();
 
-        resultPage = '<!DOCTYPE html><html><body><div>检测完毕，今天你又被屏蔽了吗？</div><div>总链接数量：'
+        resultPage = '<!DOCTYPE html><html><body><div>检测完毕。<br>如有创作内容被屏蔽，请与知乎小管家交流，共同学习，共同进步。</div><p><div><b>当前页面总回答数量：'
             + allLinkList.length
-            + '</div></div>  被屏蔽数量：'
+            + '， 被屏蔽数量：'
             + blockedLinkList.length
-            + '</div><div><table>';
+            + '</b></div><p><div><table>';
 
         if(blockedLinkList.length !== 0) {
             blockedLinkList.forEach(function (listItem) {
@@ -137,6 +137,7 @@
         const newTab = window.open('','_blank');
         newTab.document.write(resultPage);
         newTab.focus();
+        alert('检测完毕。如有创作内容被屏蔽，请与知乎小管家交流，共同学习，共同进步。')
     }
 
 
