@@ -6,7 +6,7 @@
 // @grant       window.open
 // @grant       window.focus
 // @version     1.2
-// @author      纯正老实人哈@知乎（主体编写）,尼尼尼@知乎（初版编写）
+// @author      老实人不接盘@知乎（主体编写）,尼尼尼@知乎（初版编写）
 // @description 2022/8/17 10:00:00
 // @license     GPL3
 // ==/UserScript==
