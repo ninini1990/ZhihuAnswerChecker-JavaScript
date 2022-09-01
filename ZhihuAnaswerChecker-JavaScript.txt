@@ -5,7 +5,7 @@
 // @require     https://cdn.staticfile.org/jquery/3.4.1/jquery.min.js
 // @grant       window.open
 // @grant       window.focus
-// @version     1.2
+// @version     1.4
 // @author      纯正老实人哈@知乎（主体编写）,尼尼尼@知乎（初版编写）
 // @description 2022/8/17 10:00:00
 // @license     GPL3
